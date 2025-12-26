@@ -1,0 +1,66 @@
+services:
+  # 1. Base de Datos (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    container_name: financial_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=financial_db
+    ports:
+      - "5432:5432"
+
+  # 2. Backend (FastAPI)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: financial_backend
+    volumes:
+      - ./backend:/app # Hot Reload: Cambios en tu código se reflejan al instante
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_SERVER=db
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-financial_db}
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-financial_db}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS:-http://localhost:5173,http://localhost:3000,http://localhost:8000}
+      - SECRET_KEY=${SECRET_KEY}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - PROJECT_NAME=${PROJECT_NAME:-Financial Dashboard API}
+    depends_on:
+      - db
+    command: ./scripts/start.sh
+
+  # 3. Frontend (React Router v7)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      # 👇 ESTO ES CRÍTICO: Usamos la etapa de desarrollo de tu Dockerfile
+      target: development-dependencies-env
+    container_name: financial_frontend
+    volumes:
+      - ./frontend:/app # Monta tu código local en el contenedor
+      - /app/node_modules # Protege la carpeta node_modules interna
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:8000/api/v1}
+      - VITE_AUTH0_DOMAIN=${VITE_AUTH0_DOMAIN}
+      - VITE_AUTH0_CLIENT_ID=${VITE_AUTH0_CLIENT_ID}
+      - VITE_AUTH0_AUDIENCE=${VITE_AUTH0_AUDIENCE}
+      - VITE_AUTH0_REDIRECT_URI=${VITE_AUTH0_REDIRECT_URI:-http://localhost:5173/callback}
+    # Comando para iniciar en modo desarrollo
+    command: npm run dev
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

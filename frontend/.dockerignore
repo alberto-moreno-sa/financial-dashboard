@@ -1,0 +1,12 @@
+node_modules
+.cache
+build
+public/build
+.env
+.git
+Dockerfile
+README.md
+.react-router
+build
+node_modules
+README.md
