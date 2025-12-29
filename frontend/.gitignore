@@ -15,4 +15,4 @@ coverage/
 # React Router
 /.react-router/
 /build/
-.env.production
+# .env.production - NOT ignored for demo mode deployment
