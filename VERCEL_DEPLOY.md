@@ -1,107 +1,164 @@
 # 🚀 Vercel Deployment Guide - Demo Mode
 
-Guía para hacer deployment de Financial Dashboard en Vercel (cuenta gratuita).
+Complete step-by-step guide to deploy Financial Dashboard on Vercel in **Demo Mode** (no authentication, in-memory storage).
 
 ---
 
-## 📋 Prerequisitos
+## 📋 Prerequisites
 
-- Cuenta gratuita de Vercel (https://vercel.com/signup)
-- Cuenta de GitHub
-- Proyecto subido a GitHub
+- Vercel account (free tier works)
+- GitHub account
+- Project pushed to GitHub repository
 
 ---
 
-## 🔧 Paso 1: Preparar la rama de deployment
+## 🎯 Architecture Overview
 
-```fish
-# Crear nueva rama desde main
-git checkout -b demo-deployment
+**Frontend** (Vercel Project 1):
+- React 19 + Vite
+- Deployed as static site
+- No authentication required in demo mode
+- Redirects directly to dashboard
 
-# Verificar que estás en la rama correcta
-git branch
+**Backend** (Vercel Project 2):
+- FastAPI + Python
+- Serverless functions
+- In-memory storage (no database needed)
+- Auto-resets on each deployment/restart
 
-# Confirmar y subir cambios
+---
+
+## 🔧 Step 1: Prepare Repository
+
+1. **Ensure all files are committed**:
+```bash
+git status
 git add .
-git commit -m "Configure demo mode for Vercel deployment"
-git push -u origin demo-deployment
+git commit -m "Prepare for Vercel deployment"
+git push origin main
+```
+
+2. **Verify .gitignore excludes sensitive files**:
+```bash
+cat .gitignore | grep -E "(\.env$|\.env\.production)"
+```
+
+Should show:
+```
+.env
+.env.production
 ```
 
 ---
 
-## 🎨 Paso 2: Deploy del Frontend
+## 🎨 Step 2: Deploy Frontend to Vercel
 
-### 2.1 Crear proyecto en Vercel
+### 2.1 Create Frontend Project
 
-1. Ir a https://vercel.com/new
-2. Click en "Import Project"
-3. Seleccionar tu repositorio de GitHub
-4. Seleccionar la rama `demo-deployment`
-5. **En "Configure Project"**:
-   - Framework Preset: **Vite**
-   - Root Directory: **frontend** (muy importante)
-   - Dejar todo lo demás por defecto (Vercel detecta automáticamente los comandos)
+1. Go to https://vercel.com/new
+2. Click "Import Project"
+3. Select your GitHub repository
+4. Configure project:
 
-6. **ANTES de hacer Deploy**, ir a "Environment Variables" en la misma página y agregar:
+**Project Settings:**
+```
+Framework Preset: Vite
+Root Directory: frontend
+Build Command: npm run build
+Output Directory: build/client
+Install Command: npm install
+Node Version: 20.x
+```
+
+### 2.2 Configure Environment Variables
+
+In Vercel Dashboard → Settings → Environment Variables, add:
 
 ```env
 VITE_AUTH0_DOMAIN=demo
 VITE_AUTH0_CLIENT_ID=demo_client_id
 VITE_AUTH0_AUDIENCE=https://api.financial-dashboard.com
-VITE_API_URL=TEMPORAL
+VITE_API_URL=https://YOUR_BACKEND_URL.vercel.app/api/v1
 ```
 
-**Nota**: `VITE_API_URL` se actualizará después del deploy del backend.
+**Important**: You'll update `VITE_API_URL` after deploying the backend in Step 3.
 
-### 2.2 Deploy
+### 2.3 Deploy
 
 1. Click "Deploy"
-2. Esperar ~2-3 minutos
-3. **Guardar la URL del frontend**: `https://tu-proyecto.vercel.app`
+2. Wait for build to complete (~2-3 minutes)
+3. Note your frontend URL: `https://your-project.vercel.app`
 
 ---
 
-## ⚡ Paso 3: Deploy del Backend
+## ⚡ Step 3: Deploy Backend to Vercel
 
-### 3.1 Preparar archivos para Vercel
+### 3.1 Create Backend Project
 
-```fish
+1. Go to https://vercel.com/new (new project)
+2. Click "Import Project"
+3. Select **same GitHub repository**
+4. Configure project:
+
+**Project Settings:**
+```
+Framework Preset: Other
+Root Directory: backend
+Build Command: pip install -r requirements.txt
+Output Directory: (leave empty)
+Install Command: (leave empty)
+Node Version: 20.x
+Python Version: 3.11
+```
+
+### 3.2 Create requirements.txt
+
+Create `backend/requirements.txt`:
+```bash
 cd backend
-
-# Renombrar pyproject.toml para evitar conflictos (Vercel usa requirements.txt)
-mv pyproject.toml pyproject.toml.bak
-
-# Crear requirements.txt con las dependencias necesarias
 cat > requirements.txt << 'EOF'
-fastapi==0.115.0
-uvicorn[standard]==0.30.0
+fastapi==0.115.12
+uvicorn[standard]==0.34.0
 python-jose[cryptography]==3.3.0
-httpx==0.27.0
-python-multipart==0.0.9
-pydantic==2.8.0
-pydantic-settings==2.3.0
-passlib[bcrypt]==1.7.4
-sqlalchemy==2.0.23
-alembic==1.13.0
-asyncpg==0.29.0
-pandas==2.2.0
-pdfplumber==0.11.0
+httpx==0.28.2
+python-multipart==0.0.20
+pydantic==2.10.6
+pydantic-settings==2.7.1
 EOF
 ```
 
-### 3.2 Crear vercel.json para backend
+Commit and push:
+```bash
+git add backend/requirements.txt
+git commit -m "Add requirements.txt for Vercel"
+git push
+```
 
-```fish
-cat > vercel.json << 'EOF'
+### 3.3 Configure Environment Variables
+
+In Vercel Dashboard → Settings → Environment Variables:
+
+```env
+AUTH0_DOMAIN=demo
+AUTH0_AUDIENCE=https://api.financial-dashboard.com
+SECRET_KEY=demo_secret_key_not_used
+BACKEND_CORS_ORIGINS=https://your-frontend.vercel.app,http://localhost:5173
+PROJECT_NAME=Financial Dashboard API
+API_V1_STR=/api/v1
+ENVIRONMENT=production
+DEBUG=False
+```
+
+### 3.4 Create vercel.json for Backend
+
+Create `backend/vercel.json`:
+```json
 {
   "version": 2,
   "builds": [
     {
       "src": "src/main.py",
-      "use": "@vercel/python",
-      "config": {
-        "maxLambdaSize": "15mb"
-      }
+      "use": "@vercel/python"
     }
   ],
   "routes": [
@@ -109,261 +166,256 @@ cat > vercel.json << 'EOF'
       "src": "/(.*)",
       "dest": "src/main.py"
     }
-  ],
-  "env": {
-    "PYTHONPATH": "/var/task"
-  }
+  ]
 }
-EOF
 ```
 
-### 3.3 Subir archivos
-
-```fish
-# Volver al directorio raíz
-cd ..
-
-# Agregar archivos modificados
-git add backend/requirements.txt backend/vercel.json backend/pyproject.toml.bak
-
-# Si pyproject.toml original todavía existe, eliminarlo del git
-git rm --cached backend/pyproject.toml 2>/dev/null || true
-
-# Commit y push
+Commit and push:
+```bash
+git add backend/vercel.json
 git commit -m "Add Vercel config for backend"
-git push origin demo-deployment
+git push
 ```
-
-### 3.4 Crear proyecto backend en Vercel
-
-1. Ir a https://vercel.com/new (nuevo proyecto)
-2. Click en "Import Project"
-3. Seleccionar el **mismo repositorio** de GitHub
-4. Seleccionar la rama `demo-deployment`
-5. **En "Configure Project"**:
-   - Framework Preset: **Other**
-   - Root Directory: **backend** (muy importante)
-   - Dejar todo lo demás por defecto
-
-6. **ANTES de hacer Deploy**, ir a "Environment Variables" en la misma página y agregar:
-
-```env
-AUTH0_DOMAIN=demo
-AUTH0_AUDIENCE=https://api.financial-dashboard.com
-SECRET_KEY=demo_secret_key_not_used
-BACKEND_CORS_ORIGINS=https://tu-frontend.vercel.app,http://localhost:5173
-PROJECT_NAME=Financial Dashboard API
-API_V1_STR=/api/v1
-ENVIRONMENT=production
-```
-
-**Importante**: Reemplazar `https://tu-frontend.vercel.app` con la URL del Paso 2.3.
 
 ### 3.5 Deploy
 
-1. Click "Deploy"
-2. Esperar ~3-5 minutos
-3. **Guardar la URL del backend**: `https://tu-backend.vercel.app`
+1. Click "Deploy" in Vercel
+2. Wait for deployment (~3-5 minutes)
+3. Note your backend URL: `https://your-backend.vercel.app`
 
 ---
 
-## 🔗 Paso 4: Conectar Frontend con Backend
+## 🔗 Step 4: Connect Frontend to Backend
 
-1. Ir al proyecto Frontend en Vercel Dashboard
+1. Go to Frontend Vercel project
 2. Settings → Environment Variables
-3. Editar `VITE_API_URL`:
+3. **Update** `VITE_API_URL`:
 ```env
-VITE_API_URL=https://tu-backend.vercel.app/api/v1
+VITE_API_URL=https://your-backend.vercel.app/api/v1
 ```
-4. Hacer redeploy:
-   - Ir a pestaña "Deployments"
-   - Click en "..." del último deployment
+
+4. Redeploy frontend:
+   - Go to Deployments tab
+   - Click "..." on latest deployment
    - Click "Redeploy"
 
 ---
 
-## ✅ Verificar Deployment
+## ✅ Step 5: Verify Deployment
 
-### Paso 1: Probar que el Backend está funcionando
+### Test Backend
 
-**Opción A - Desde el navegador:**
+Visit: `https://your-backend.vercel.app/docs`
 
-1. Abrir en el navegador: `https://tu-backend.vercel.app/docs`
-   - ✅ Debe mostrar Swagger UI (interfaz de documentación de FastAPI)
-   - ✅ Debe listar todos los endpoints disponibles
+Should show:
+- Swagger UI with API documentation
+- `/api/v1/portfolio/dashboard/stats` endpoint
+- `/api/v1/portfolio/transactions` endpoint
 
-2. Probar el endpoint de salud:
-   - En Swagger UI, buscar el endpoint `/api/v1/health`
-   - Click en "Try it out" → "Execute"
-   - Debe retornar: `{"status": "healthy"}`
-
-3. Probar el endpoint de demo portfolio:
-   - Buscar el endpoint `/api/v1/portfolio/dashboard/stats`
-   - Click en "Try it out" → "Execute"
-   - ✅ Debe retornar datos del portfolio demo (sin pedir autenticación)
-
-**Opción B - Desde la terminal:**
-
-```fish
-# Probar endpoint de salud
-curl https://tu-backend.vercel.app/api/v1/health
-
-# Debe retornar:
-# {"status":"healthy"}
-
-# Probar endpoint de stats (demo mode)
-curl https://tu-backend.vercel.app/api/v1/portfolio/dashboard/stats
-
-# Debe retornar JSON con datos del portfolio demo
+Test endpoint:
+```bash
+curl https://your-backend.vercel.app/api/v1/health
 ```
 
-**Verificar que Demo Mode está activo:**
-
-En los logs de Vercel (pestaña "Logs" del deployment), debes ver:
-```
-🎭 DEMO MODE ENABLED - Using in-memory storage (no database)
-```
-
-### Paso 2: Probar el Frontend
-
-**Visitar:** `https://tu-frontend.vercel.app`
-
-Debe:
-- ✅ Redirigir automáticamente a `/dashboard/portfolio` (sin login)
-- ✅ Mostrar el dashboard con datos demo
-- ✅ Mostrar estadísticas: Total Value, Cash, Invested
-- ✅ Mostrar tabla de holdings con 4 posiciones (AAPL, MSFT, GOOGL, CETES)
-- ✅ Mostrar gráfico de snapshot history
-
-**Verificar en DevTools (F12):**
-
-1. Abrir DevTools → Pestaña "Network"
-2. Recargar la página
-3. Filtrar por "Fetch/XHR"
-4. Verificar:
-   - ✅ Llamadas a `tu-backend.vercel.app/api/v1/portfolio/dashboard/stats`
-   - ✅ Llamadas a `tu-backend.vercel.app/api/v1/portfolio/transactions`
-   - ✅ Status Code: 200 OK
-   - ✅ Response contiene datos JSON del portfolio
-
-**Verificar en Console (F12):**
-- ❌ No debe haber errores de CORS
-- ❌ No debe haber errores de autenticación
-- ✅ Puede haber un mensaje de "Demo Mode" (opcional)
-
-### Paso 3: Verificar Integración Completa
-
-**Test de datos en vivo:**
-
-1. Abrir el frontend en el navegador
-2. Verificar que los datos coincidan con los del backend:
-   - Abrir DevTools → Network → Ver respuesta de `/dashboard/stats`
-   - Los números deben coincidir con lo que se muestra en la UI
-
-**Ejemplo de datos demo esperados:**
+Should return:
 ```json
-{
-  "netWorth": {"value": 200000, "label": "Total Value"},
-  "cash": {"value": 50000, "label": "Cash"},
-  "investments": {"value": 150000, "label": "Invested"},
-  "performance": {
-    "dailyChange": 5000,
-    "dailyChangePercentage": 2.56,
-    "trend": "up"
-  }
-}
+{"status": "healthy"}
 ```
 
-### Troubleshooting Rápido
+### Test Frontend
 
-**Si el backend no carga:**
-```fish
-# Ver logs del deployment en Vercel
-# O probar directamente el endpoint raíz
-curl https://tu-backend.vercel.app/
+Visit: `https://your-frontend.vercel.app`
 
-# Debe retornar:
-# {"message":"Welcome to Financial Dashboard API. Go to /docs for Swagger UI"}
-```
+Should:
+1. ✅ Redirect directly to `/dashboard/portfolio` (no login)
+2. ✅ Show demo data in dashboard
+3. ✅ Display portfolio stats
+4. ✅ Show holdings table
+5. ✅ Show snapshot history
 
-**Si frontend muestra error 404 al llamar al backend:**
-- Verificar que `VITE_API_URL` en las variables de entorno tenga la URL correcta
-- Debe terminar en `/api/v1` (sin slash final)
-- Ejemplo: `https://tu-backend.vercel.app/api/v1`
+### Test API Integration
 
----
-
-## 🔄 Actualizar Deployment
-
-Vercel hace auto-deploy cuando haces push a la rama `demo-deployment`:
-
-```fish
-# Asegurarte de estar en la rama correcta
-git checkout demo-deployment
-
-# Hacer cambios y subir
-git add .
-git commit -m "Update changes"
-git push origin demo-deployment
-```
-
-Vercel detectará el push y hará redeploy automáticamente.
+Open browser DevTools → Network tab:
+- Visit dashboard
+- Should see API calls to `your-backend.vercel.app`
+- Should return 200 status codes
+- Should show demo data in responses
 
 ---
 
 ## 🔍 Troubleshooting
 
-### Frontend muestra página en blanco
+### Issue: Frontend shows blank page
 
-1. Revisar consola del navegador (F12)
-2. Verificar que `VITE_API_URL` esté correcto en Vercel
-3. Hacer redeploy del frontend
+**Solution**:
+1. Check browser console for errors
+2. Verify `VITE_API_URL` is correct in Vercel env vars
+3. Redeploy frontend after changing env vars
 
-### API retorna 404 o 500
+### Issue: API returns 404 or 500
 
-1. Revisar logs en Vercel Dashboard
-2. Verificar que `backend/vercel.json` exista
-3. Verificar que `requirements.txt` esté completo
-4. Verificar que `AUTH0_DOMAIN=demo` esté configurado
+**Solution**:
+1. Check backend logs in Vercel Dashboard
+2. Verify `backend/vercel.json` exists
+3. Verify `requirements.txt` has all dependencies
+4. Check `AUTH0_DOMAIN=demo` is set
 
-### Errores de CORS
+### Issue: CORS errors
 
-1. Agregar URL del frontend a `BACKEND_CORS_ORIGINS`
-2. Formato: `https://tu-frontend.vercel.app,http://localhost:5173`
-3. Hacer redeploy del backend
+**Solution**:
+1. Add frontend URL to `BACKEND_CORS_ORIGINS`
+2. Format: `https://your-frontend.vercel.app,http://localhost:5173`
+3. Redeploy backend
 
----
+### Issue: "Module not found" in backend
 
-## 📊 Datos Demo
+**Solution**:
+1. Add missing package to `requirements.txt`
+2. Commit and redeploy
 
-El demo incluye automáticamente:
-- 1 usuario demo
-- 1 portfolio con 4 posiciones (AAPL, MSFT, GOOGL, CETES)
-- 3 snapshots mensuales (Oct, Nov, Dic 2024)
-- Valor total: $200,000 MXN
+### Issue: Data doesn't persist
 
-**Nota**: Los datos se resetean en cada deployment (almacenamiento en memoria).
-
----
-
-## ✅ Checklist de Deployment
-
-- [ ] Repositorio subido a GitHub
-- [ ] Rama `demo-deployment` creada
-- [ ] Frontend deployado en Vercel
-- [ ] Variables de entorno del frontend configuradas
-- [ ] `requirements.txt` creado
-- [ ] `backend/vercel.json` creado
-- [ ] Backend deployado en Vercel
-- [ ] Variables de entorno del backend configuradas
-- [ ] `VITE_API_URL` actualizado con URL del backend
-- [ ] Frontend redesplegado
-- [ ] Verificado: Frontend carga sin login
-- [ ] Verificado: Dashboard muestra datos demo
-- [ ] Verificado: API responde correctamente
+**Expected behavior** - Demo mode uses in-memory storage:
+- Data resets on each deployment
+- Data resets when Vercel scales down functions
+- This is intentional for demo purposes
 
 ---
 
-**¡Demo listo! 🎉**
+## 📊 Demo Data
 
-Comparte tu demo: `https://tu-frontend.vercel.app`
+Demo mode automatically includes:
+- 1 demo user
+- 1 portfolio with 4 positions (AAPL, MSFT, GOOGL, CETES)
+- 3 monthly snapshots (Oct, Nov, Dec 2024)
+- Total portfolio value: $200,000 MXN
+
+Data is loaded from `backend/src/core/demo_storage.py`.
+
+---
+
+## 🔄 Updating Deployment
+
+### Update Frontend:
+```bash
+# Make changes to frontend code
+git add frontend/
+git commit -m "Update frontend"
+git push
+# Vercel auto-deploys on push
+```
+
+### Update Backend:
+```bash
+# Make changes to backend code
+git add backend/
+git commit -m "Update backend"
+git push
+# Vercel auto-deploys on push
+```
+
+### Manual Redeploy:
+1. Go to Vercel Dashboard
+2. Select project
+3. Deployments → Click "..." → Redeploy
+
+---
+
+## 🎭 Demo Mode Features
+
+✅ **Enabled**:
+- View dashboard without login
+- See demo portfolio data
+- Explore all UI features
+- API endpoints return demo data
+
+❌ **Disabled**:
+- File uploads (no database)
+- Data persistence (in-memory only)
+- Authentication
+- Multi-user support
+
+---
+
+## 🔒 Security Notes
+
+**Demo Mode is NOT SECURE:**
+- No authentication
+- No data isolation
+- Public access to all data
+- In-memory storage only
+
+**Do NOT use Demo Mode with:**
+- Real user data
+- Production environments
+- Sensitive information
+
+---
+
+## 📝 Vercel Configuration Files
+
+### Root: vercel.json
+```json
+{
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/build/client",
+  "devCommand": "cd frontend && npm run dev",
+  "installCommand": "cd frontend && npm install"
+}
+```
+
+### Backend: backend/vercel.json
+```json
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/main.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "src/main.py"
+    }
+  ]
+}
+```
+
+### Backend: requirements.txt
+```
+fastapi==0.115.12
+uvicorn[standard]==0.34.0
+python-jose[cryptography]==3.3.0
+httpx==0.28.2
+python-multipart==0.0.20
+pydantic==2.10.6
+pydantic-settings==2.7.1
+```
+
+---
+
+## ✅ Deployment Checklist
+
+- [ ] Repository pushed to GitHub
+- [ ] Frontend Vercel project created
+- [ ] Frontend environment variables set
+- [ ] Frontend deployed successfully
+- [ ] Backend Vercel project created
+- [ ] `requirements.txt` created
+- [ ] `backend/vercel.json` created
+- [ ] Backend environment variables set
+- [ ] Backend deployed successfully
+- [ ] Frontend `VITE_API_URL` updated with backend URL
+- [ ] Frontend redeployed
+- [ ] Tested: Frontend loads without login
+- [ ] Tested: Dashboard shows demo data
+- [ ] Tested: API endpoints return data
+- [ ] No CORS errors in browser console
+
+---
+
+**Demo deployment ready! 🎉**
+
+Share your demo: `https://your-frontend.vercel.app`
