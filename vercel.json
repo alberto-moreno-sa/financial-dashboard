@@ -1,0 +1,15 @@
+{
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/build/client",
+  "devCommand": "cd frontend && npm run dev",
+  "installCommand": "cd frontend && npm install",
+  "framework": null,
+  "regions": ["iad1"],
+  "env": {
+    "VITE_API_URL": "https://financial-dashboard-api.vercel.app/api/v1",
+    "VITE_AUTH0_DOMAIN": "demo-financial.auth0.com",
+    "VITE_AUTH0_CLIENT_ID": "demo_client_id_replace",
+    "VITE_AUTH0_AUDIENCE": "https://api.financial-dashboard.com",
+    "VITE_AUTH0_REDIRECT_URI": "https://financial-dashboard.vercel.app/callback"
+  }
+}

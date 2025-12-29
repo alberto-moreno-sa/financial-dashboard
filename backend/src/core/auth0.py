@@ -10,10 +10,11 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 from src.core.config import settings
+from src.core.demo_auth import get_demo_user, is_demo_mode
 import httpx
 
-# Security scheme for Bearer token
-security = HTTPBearer()
+# Security scheme for Bearer token (optional for demo mode)
+security = HTTPBearer(auto_error=False)
 
 # Cache for Auth0 public keys (JWKS)
 _jwks_cache: Optional[Dict] = None
@@ -101,10 +102,13 @@ def verify_and_decode_token(token: str) -> Dict:
 
 
 async def get_current_user_from_token(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ) -> Dict:
     """
     FastAPI dependency that extracts and validates the current user from the JWT token.
+
+    DEMO MODE: If AUTH0_DOMAIN is not configured or set to 'demo', returns demo user
+    without requiring authentication. This allows public demo deployments on Vercel.
 
     The token should contain custom claims added by our Auth0 Action:
     - https://financial-dashboard.com/auth0_id
@@ -123,6 +127,18 @@ async def get_current_user_from_token(
             "email_verified": bool
         }
     """
+    # DEMO MODE: Return demo user without authentication
+    if is_demo_mode(settings.AUTH0_DOMAIN):
+        return await get_demo_user()
+
+    # PRODUCTION MODE: Require and validate token
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authentication token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     token = credentials.credentials
     payload = verify_and_decode_token(token)
 
