@@ -91,9 +91,9 @@ async def get_demo_transactions(
                 "currentPrice": float(position["current_price"])
             },
             "financials": {
-                "marketValue": float(position["market_value"]),
-                "gainLoss": gain_loss,
-                "gainLossPercent": gain_loss_pct
+                "totalValue": float(position["market_value"]),
+                "unrealizedGain": gain_loss,
+                "unrealizedGainPercent": gain_loss_pct
             }
         })
 
