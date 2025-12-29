@@ -15,8 +15,17 @@ app = FastAPI(
 
 # CORS Configuration
 # This allows your React frontend to communicate with this Backend
-if settings.BACKEND_CORS_ORIGINS:
-    # Convert comma-separated string to list
+if settings.AUTH0_DOMAIN == "demo":
+    # Demo mode: Allow all origins for easier testing
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,  # Must be False when allow_origins is ["*"]
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+elif settings.BACKEND_CORS_ORIGINS:
+    # Production mode: Use specific origins
     origins = [origin.strip() for origin in settings.BACKEND_CORS_ORIGINS.split(",")]
     app.add_middleware(
         CORSMiddleware,
