@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, Optional
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -21,11 +21,11 @@ class Settings(BaseSettings):
     # CORS origins - accepts comma-separated string from environment
     BACKEND_CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000,http://localhost:8000"
 
-    # Database Config
-    POSTGRES_SERVER: str
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_DB: str
+    # Database Config - Optional for demo mode
+    POSTGRES_SERVER: Optional[str] = "localhost"
+    POSTGRES_USER: Optional[str] = "postgres"
+    POSTGRES_PASSWORD: Optional[str] = "postgres"
+    POSTGRES_DB: Optional[str] = "financial_db"
     POSTGRES_PORT: int = 5432
 
     # Computed property for the connection string
