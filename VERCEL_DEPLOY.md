@@ -178,32 +178,112 @@ VITE_API_URL=https://tu-backend.vercel.app/api/v1
 
 ## ✅ Verificar Deployment
 
-### Probar Backend
+### Paso 1: Probar que el Backend está funcionando
 
-Visitar: `https://tu-backend.vercel.app/docs`
+**Opción A - Desde el navegador:**
 
-Debe mostrar Swagger UI con la documentación de la API.
+1. Abrir en el navegador: `https://tu-backend.vercel.app/docs`
+   - ✅ Debe mostrar Swagger UI (interfaz de documentación de FastAPI)
+   - ✅ Debe listar todos los endpoints disponibles
 
-Probar endpoint:
+2. Probar el endpoint de salud:
+   - En Swagger UI, buscar el endpoint `/api/v1/health`
+   - Click en "Try it out" → "Execute"
+   - Debe retornar: `{"status": "healthy"}`
+
+3. Probar el endpoint de demo portfolio:
+   - Buscar el endpoint `/api/v1/portfolio/dashboard/stats`
+   - Click en "Try it out" → "Execute"
+   - ✅ Debe retornar datos del portfolio demo (sin pedir autenticación)
+
+**Opción B - Desde la terminal:**
+
 ```fish
+# Probar endpoint de salud
 curl https://tu-backend.vercel.app/api/v1/health
+
+# Debe retornar:
+# {"status":"healthy"}
+
+# Probar endpoint de stats (demo mode)
+curl https://tu-backend.vercel.app/api/v1/portfolio/dashboard/stats
+
+# Debe retornar JSON con datos del portfolio demo
 ```
 
-Debe retornar:
-```json
-{"status": "healthy"}
+**Verificar que Demo Mode está activo:**
+
+En los logs de Vercel (pestaña "Logs" del deployment), debes ver:
+```
+🎭 DEMO MODE ENABLED - Using in-memory storage (no database)
 ```
 
-### Probar Frontend
+### Paso 2: Probar el Frontend
 
-Visitar: `https://tu-frontend.vercel.app`
+**Visitar:** `https://tu-frontend.vercel.app`
 
 Debe:
-- ✅ Redirigir directamente al dashboard (sin login)
-- ✅ Mostrar datos demo del portfolio
-- ✅ Mostrar estadísticas
-- ✅ Mostrar tabla de holdings
-- ✅ Mostrar historial de snapshots
+- ✅ Redirigir automáticamente a `/dashboard/portfolio` (sin login)
+- ✅ Mostrar el dashboard con datos demo
+- ✅ Mostrar estadísticas: Total Value, Cash, Invested
+- ✅ Mostrar tabla de holdings con 4 posiciones (AAPL, MSFT, GOOGL, CETES)
+- ✅ Mostrar gráfico de snapshot history
+
+**Verificar en DevTools (F12):**
+
+1. Abrir DevTools → Pestaña "Network"
+2. Recargar la página
+3. Filtrar por "Fetch/XHR"
+4. Verificar:
+   - ✅ Llamadas a `tu-backend.vercel.app/api/v1/portfolio/dashboard/stats`
+   - ✅ Llamadas a `tu-backend.vercel.app/api/v1/portfolio/transactions`
+   - ✅ Status Code: 200 OK
+   - ✅ Response contiene datos JSON del portfolio
+
+**Verificar en Console (F12):**
+- ❌ No debe haber errores de CORS
+- ❌ No debe haber errores de autenticación
+- ✅ Puede haber un mensaje de "Demo Mode" (opcional)
+
+### Paso 3: Verificar Integración Completa
+
+**Test de datos en vivo:**
+
+1. Abrir el frontend en el navegador
+2. Verificar que los datos coincidan con los del backend:
+   - Abrir DevTools → Network → Ver respuesta de `/dashboard/stats`
+   - Los números deben coincidir con lo que se muestra en la UI
+
+**Ejemplo de datos demo esperados:**
+```json
+{
+  "netWorth": {"value": 200000, "label": "Total Value"},
+  "cash": {"value": 50000, "label": "Cash"},
+  "investments": {"value": 150000, "label": "Invested"},
+  "performance": {
+    "dailyChange": 5000,
+    "dailyChangePercentage": 2.56,
+    "trend": "up"
+  }
+}
+```
+
+### Troubleshooting Rápido
+
+**Si el backend no carga:**
+```fish
+# Ver logs del deployment en Vercel
+# O probar directamente el endpoint raíz
+curl https://tu-backend.vercel.app/
+
+# Debe retornar:
+# {"message":"Welcome to Financial Dashboard API. Go to /docs for Swagger UI"}
+```
+
+**Si frontend muestra error 404 al llamar al backend:**
+- Verificar que `VITE_API_URL` en las variables de entorno tenga la URL correcta
+- Debe terminar en `/api/v1` (sin slash final)
+- Ejemplo: `https://tu-backend.vercel.app/api/v1`
 
 ---
 
