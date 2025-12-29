@@ -83,6 +83,7 @@ pydantic-settings==2.3.0
 passlib[bcrypt]==1.7.4
 sqlalchemy==2.0.23
 alembic==1.13.0
+asyncpg==0.29.0
 EOF
 ```
 
