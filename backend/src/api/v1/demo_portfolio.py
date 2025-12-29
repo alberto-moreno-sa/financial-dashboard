@@ -76,20 +76,25 @@ async def get_demo_transactions(
     positions = get_demo_positions()
 
     items = []
-    for position in positions:
+    for idx, position in enumerate(positions):
         gain_loss = float(position["market_value"] - (position["avg_cost"] * position["quantity"]))
         gain_loss_pct = (gain_loss / float(position["avg_cost"] * position["quantity"])) * 100 if position["avg_cost"] > 0 else 0.0
 
         items.append({
+            "id": f"holding-{idx+1}",
             "ticker": position["ticker"],
-            "description": position["description"],
-            "quantity": float(position["quantity"]),
-            "avgCost": float(position["avg_cost"]),
-            "currentPrice": float(position["current_price"]),
-            "marketValue": float(position["market_value"]),
-            "gainLoss": gain_loss,
-            "gainLossPercent": gain_loss_pct,
-            "assetType": position["asset_type"]
+            "name": position["description"],
+            "type": position["asset_type"],
+            "details": {
+                "quantity": float(position["quantity"]),
+                "avgCost": float(position["avg_cost"]),
+                "currentPrice": float(position["current_price"])
+            },
+            "financials": {
+                "marketValue": float(position["market_value"]),
+                "gainLoss": gain_loss,
+                "gainLossPercent": gain_loss_pct
+            }
         })
 
     return HoldingsResponse(count=len(items), items=items)
