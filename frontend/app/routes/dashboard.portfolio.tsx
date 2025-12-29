@@ -1,6 +1,7 @@
 import { Suspense, useState } from "react";
 import { PortfolioStats } from "~/widgets/portfolio-stats/ui/PortfolioStats";
 import { HoldingsTable } from "~/widgets/holdings-table/ui/HoldingsTable";
+import { PortfolioDistribution } from "~/widgets/portfolio-distribution/ui/PortfolioDistribution";
 import { Skeleton } from "~/shared/ui/skeleton";
 import { UploadPortfolio } from "~/features/portfolio/components/UploadPortfolio";
 import { BulkUploadPortfolio } from "~/features/portfolio/components/BulkUploadPortfolio";
@@ -112,6 +113,13 @@ export default function PortfolioPage() {
               }
             >
               <PortfolioStats />
+            </Suspense>
+          </section>
+
+          {/* Section 1.5: Asset Distribution Chart */}
+          <section>
+            <Suspense fallback={<Skeleton className="h-[400px] rounded-xl" />}>
+              <PortfolioDistribution />
             </Suspense>
           </section>
 
