@@ -498,17 +498,6 @@ For new developers:
 
 ---
 
-## ⚖️ License & Copyright
-
-**Copyright (c) 2025 Alberto Moreno**
-
-**All Rights Reserved.**
-
-This source code is the proprietary property of Alberto Moreno.
-Copying, redistribution, or modification of this file or any part of this project, via any medium, is strictly prohibited without the express written permission of the author.
-
----
-
 ## 📧 Contact
 
 For questions or support, please contact the repository owner.
