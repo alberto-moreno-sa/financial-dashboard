@@ -4,21 +4,25 @@ import { useEffect } from "react";
 import { Button } from "~/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/shared/ui/card";
 
-// Check if running in demo mode
-const isDemoMode = import.meta.env.VITE_AUTH0_DOMAIN === "demo" ||
-                   import.meta.env.VITE_AUTH0_DOMAIN === "demo-financial.auth0.com" ||
-                   !import.meta.env.VITE_AUTH0_DOMAIN;
-
 export default function LoginPage() {
   const navigate = useNavigate();
   const { loginWithRedirect, isAuthenticated, isLoading } = useAuth0();
 
+  // Check if running in demo mode
+  const isDemoMode = import.meta.env.VITE_AUTH0_DOMAIN === "demo" ||
+                     import.meta.env.VITE_AUTH0_DOMAIN === "demo-financial.auth0.com" ||
+                     !import.meta.env.VITE_AUTH0_DOMAIN;
+
   // Demo mode: redirect directly to dashboard without authentication
   useEffect(() => {
+    console.log("Auth0 Domain:", import.meta.env.VITE_AUTH0_DOMAIN);
+    console.log("Is Demo Mode:", isDemoMode);
+
     if (isDemoMode) {
+      console.log("Redirecting to dashboard in demo mode");
       navigate("/dashboard/portfolio");
     }
-  }, [navigate]);
+  }, [navigate, isDemoMode]);
 
   // Redirect if already authenticated (production mode)
   useEffect(() => {

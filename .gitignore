@@ -5,4 +5,4 @@ postgres_data/
 __pycache__/
 venv/
 .git/
-.env.production
+# .env.production - NOT ignored for demo mode deployment
