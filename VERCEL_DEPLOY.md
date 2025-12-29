@@ -81,6 +81,8 @@ python-multipart==0.0.9
 pydantic==2.8.0
 pydantic-settings==2.3.0
 passlib[bcrypt]==1.7.4
+sqlalchemy==2.0.23
+alembic==1.13.0
 EOF
 ```
 
